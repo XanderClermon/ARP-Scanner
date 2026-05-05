@@ -11,8 +11,3 @@ class BaseStorage(ABC):
     def add_device(self, ip: str, mac: str) -> bool:
         """Должен сохранить устройство и вернуть True, если оно новое"""
         pass
-
-class BaseNotifier(ABC):
-    @abstractmethod
-    def send(self, title: str, message: str):
-        pass
