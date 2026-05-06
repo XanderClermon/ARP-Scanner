@@ -1,6 +1,6 @@
 import os
 import json
-from interfaces import BaseStorage
+from core.interfaces import BaseStorage
 
 class JsonStorage(BaseStorage):
     def __init__(self, filename="devices.json"):
@@ -20,7 +20,7 @@ class JsonStorage(BaseStorage):
         with open(self.filename, "w") as f:
             json.dump(self._devices, f, indent=4)
 
-    def add_device(self, ip: str, mac: str, name: str = "Unknown", OS: str = "Unknow") -> bool:
+    def add_device(self, ip: str, mac: str, name: str = "Unknown", OS: str = "Unknow", **kwargs) -> bool:
         is_completely_new = mac not in self._devices
 
         device_data = {

@@ -1,23 +1,18 @@
 from config import IFACE, TARGET_NETWORK, PAUSE_TIME
-from storage import JsonStorage
-from NetDaemon import NetDaemon
-from scanner import ArpScanner
-from mDNS import MdnsResolver
+from core.storage import JsonStorage
+from core.daemon import NetDaemon
+from modules.arp_scan import ArpScanner
+from modules.host_resolve import MdnsResolver
 import asyncio
-from OS.detectors import BasicOSDetector
-from OS.analyzer import OSAnalyzer
+from modules.os_detect import BasicOSDetector
+
 
 def FactoryDaemon():
-
-    resolver = MdnsResolver()
-    scanner = ArpScanner(target_network=TARGET_NETWORK, interface_name=IFACE)
+    discovery = ArpScanner(target_network=TARGET_NETWORK, interface_name=IFACE)
+    enrichers = [MdnsResolver(), BasicOSDetector(tcp_port=80)]
     storage = JsonStorage()
-    detector = BasicOSDetector(tcp_port=80)
-    os_analyzer = OSAnalyzer()
-    os_analyzer.detector = detector
     pause = PAUSE_TIME
-
-    return NetDaemon(scanner, storage, resolver,os_analyzer, pause)
+    return NetDaemon(discovery,storage,enrichers,pause)
 
 if __name__ == "__main__":
     daemon = FactoryDaemon()
