@@ -20,13 +20,14 @@ class JsonStorage(BaseStorage):
         with open(self.filename, "w") as f:
             json.dump(self._devices, f, indent=4)
 
-    def add_device(self, ip: str, mac: str, name: str = "Unknown") -> bool:
+    def add_device(self, ip: str, mac: str, name: str = "Unknown", OS: str = "Unknow") -> bool:
         is_completely_new = mac not in self._devices
 
         device_data = {
             "ip": ip,
             "mac": mac,
-            "name": name
+            "name": name,
+            "OS": OS
         }
 
         if is_completely_new or self._devices[mac] != device_data:
