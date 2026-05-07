@@ -2,7 +2,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from typing import List
 from core.interfaces import BaseDiscoveryModule, BaseEnricherModule, BaseStorage
-
+from core.manager import SignalManager
 
 class NetDaemon:
     def __init__(self, discovery: BaseDiscoveryModule, storage: BaseStorage, enrichers: List[BaseEnricherModule], pause: float
@@ -15,42 +15,49 @@ class NetDaemon:
         self._executor = ThreadPoolExecutor(max_workers=5)
 
     async def run(self):
+        manager = SignalManager()
+        is_active = True
         loop = asyncio.get_event_loop()
         print(f"--- NetDaemon запущен (Модулей обогащения: {len(self.enrichers)}) ---")
 
         while True:
-            # 1. Поиск активных устройств (Discovery)
-            found_devices = await self.discovery.scan()
+            # 1. Сначала ПРОВЕРЯЕМ команды
+            command = manager.get_latest_command()
 
-            for device in found_devices:
-                ip = device['ip']
-                mac = device['mac']
+            if command == "STOP":
+                is_active = False
+                print("🛑 Получена команда STOP. Сканирование приостановлено.")
+            elif command == "START":
+                is_active = True
+                print("🚀 Получена команда START. Возобновляю работу.")
 
-                # Собираем данные от всех модулей обогащения в один словарь
-                enriched_data = {}
+            # 2. Только если активны — делаем работу
+            if is_active:
+                # Сканируем ТОЛЬКО здесь
+                found_devices = await self.discovery.scan()
 
-                for enricher in self.enrichers:
-                    # Запускаем каждый enricher (OS, Name и т.д.) в отдельном потоке
-                    extra_info = await loop.run_in_executor(
-                        self._executor,
-                        enricher.enrich,
-                        ip
-                    )
-                    enriched_data.update(extra_info)
+                for device in found_devices:
+                    ip = device['ip']
+                    mac = device['mac']
+                    enriched_data = {}
 
-                # 2. Сохраняем результат
-                # Мы передаем все собранные данные (os, hostname и т.д.) через kwargs
-                is_new = self.storage.add_device(
-                    ip=ip,
-                    mac=mac,
-                    **enriched_data
-                )
+                    for enricher in self.enrichers:
+                        extra_info = await loop.run_in_executor(
+                            self._executor,
+                            enricher.enrich,
+                            ip
+                        )
+                        enriched_data.update(extra_info)
 
-                # 3. Красивый лог
-                status = "NEW" if is_new else "UP "
-                os_label = enriched_data.get("os", "Unknown")
-                name_label = enriched_data.get("hostname", "Unknown")
+                    is_new = self.storage.add_device(ip=ip, mac=mac, **enriched_data)
 
-                print(f"[{status}] {ip: <15} | {os_label: <15} | {name_label}")
+                    status = "NEW" if is_new else "UP "
+                    os_label = enriched_data.get("os", "Unknown")
+                    name_label = enriched_data.get("hostname", "Unknown")
+                    print(f"[{status}] {ip: <15} | {os_label: <15} | {name_label}")
 
-            await asyncio.sleep(self.pause_time)
+                # Пауза после завершения полного цикла сканирования
+                await asyncio.sleep(self.pause_time)
+            else:
+                # Если на паузе — просто ждем команду, не нагружая сеть сканером
+                await asyncio.sleep(1)

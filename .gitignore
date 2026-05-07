@@ -7,3 +7,5 @@ venv/
 .vscode/
 .idea/
 devices.json
+Thumbs.db
+desktop.ini
