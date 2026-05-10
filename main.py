@@ -4,12 +4,12 @@ from core.daemon import NetDaemon
 from modules.arp_scan import ArpScanner
 from modules.host_resolve import MdnsResolver
 import asyncio
-from modules.os_detect import BasicOSDetector
+from modules.OS.combined import OSDetector
 
 def FactoryDaemon():
     discovery = ArpScanner(target_network=TARGET_NETWORK, interface_name=IFACE)
-    enrichers = [MdnsResolver(), BasicOSDetector(tcp_port=80)]
-    storage = RedisStorage()
+    enrichers = [MdnsResolver(), OSDetector(tcp_port=80)]
+    storage = JsonStorage()
     pause = PAUSE_TIME
     return NetDaemon(discovery,storage,enrichers,pause)
 
