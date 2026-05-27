@@ -24,7 +24,7 @@ def FactoryDaemon():
 
     storage = RedisStorage()
 
-    return NetDaemon( discovery=discovery, storage=storage, enrichers=enrichers, mode=ScanMode.LEGACY, pause_time=PAUSE_TIME
+    return NetDaemon( discovery=discovery, storage=storage, enrichers=enrichers, mode=ScanMode.ACTIVE, pause_time=PAUSE_TIME
     )
 
 

@@ -9,7 +9,7 @@ class SignalManager:
             port=settings.REDIS_PORT,
             decode_responses=True
         )
-        self.last_id = '0'  # '$' означает, что мы читаем только НОВЫЕ сообщения с момента запуска
+        self.last_id = '$'  # '$' означает, что мы читаем только НОВЫЕ сообщения с момента запуска
 
     def get_latest_command(self):
         """Проверяет стрим на наличие новых команд"""
@@ -20,11 +20,11 @@ class SignalManager:
         streams = self.r.xread({settings.STREAM_NAME: self.last_id}, count=1, block=10)
 
         if streams:
-            # Разбираем структуру ответа Redis Streams
-            # streams выглядит так: [[stream_name, [[message_id, {data}]]]]
             for stream_name, messages in streams:
                 for msg_id, data in messages:
-                    self.last_id = msg_id  # Запоминаем ID, чтобы не читать это сообщение снова
-                    return data.get('command')
+                    self.last_id = msg_id
+                    cmd = data.get('command')
+                    print(f"[DEBUG] Менеджер увидел команду в Redis: {cmd}")  # <-- ДЕБАГ ЛОГ
+                    return cmd
 
         return None

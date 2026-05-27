@@ -5,8 +5,8 @@ from datetime import datetime
 from enum import Enum
 
 class ScanMode(Enum):
-    GHOST = "ghost"    # Пассивный (только слушаем)
-    LEGACY = "legacy"  # Активный (сканируем, пингуем)
+    ACTIVE = "active"
+    GHOST = "ghost"
 
 @dataclass
 class DeviceInfo:
