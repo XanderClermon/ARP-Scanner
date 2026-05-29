@@ -53,7 +53,7 @@ class MdnsResolver(BaseEnricherModule, ILifecycle):
         hostname = self._cache.get(device.ip)
 
         # 2. If Legacy mode and no hostname, perform active query
-        if not hostname and mode == ScanMode.LEGACY:
+        if not hostname and mode == ScanMode.ACTIVE:
             hostname = await self._active_query(device.ip)
 
         if hostname:

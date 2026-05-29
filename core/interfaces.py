@@ -37,6 +37,31 @@ class BaseEnricherModule(BaseNetworkModule, ILifecycle):
 
 class BaseStorage(ABC):
     @abstractmethod
-    async def add_or_update(self, device: DeviceInfo) -> bool: pass
+    async def add_or_update(self, device: DeviceInfo) -> bool:
+        """Добавляет или обновляет устройство. Возвращает True, если устройство было новым."""
+        pass
+
     @abstractmethod
-    async def get_all_devices(self) -> List[DeviceInfo]: pass
+    async def get_all_devices(self) -> List[DeviceInfo]:
+        pass
+
+    # === Новые методы (очень важны для новой архитектуры) ===
+    @abstractmethod
+    async def get_by_ip(self, ip: str) -> Optional[DeviceInfo]:
+        """Получить одно устройство по IP"""
+        pass
+
+    @abstractmethod
+    async def get_online_devices(self) -> List[DeviceInfo]:
+        """Получить все онлайн устройства"""
+        pass
+
+
+# Новый интерфейс для сервисов оркестратора
+class BaseService(ABC):
+    """Базовый интерфейс для всех сервисов в Orchestrator"""
+    async def start(self):
+        pass
+
+    async def stop(self):
+        pass

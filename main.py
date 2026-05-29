@@ -1,10 +1,7 @@
 import asyncio
 from config import IFACE, TARGET_NETWORK, PAUSE_TIME
-
-from core.interfaces import ScanMode
 from core.Storage import JsonStorage, RedisStorage
-from core.Daemon import NetDaemon
-
+from Orchestrator.NetDaemon import NetDaemon
 from modules.GetAddress import ArpScanner
 from modules.GetName import MdnsResolver
 from modules.PortScanner import PortScanner
@@ -13,24 +10,37 @@ from modules.GetDevice import DeviceClassifier
 
 
 def FactoryDaemon():
-    discovery = ArpScanner(target_network=TARGET_NETWORK, interface_name=IFACE)
+    """Фабрика создания демона — единственное место изменения зависимостей"""
+
+    discovery = ArpScanner(
+        target_network=TARGET_NETWORK,
+        interface_name=IFACE
+    )
 
     enrichers = [
-        MdnsResolver(),  # Resolve Hostnames (passive/active)
-        PortScanner(),  # Identify open ports (active only)
-        OSDetector(),  # Detect OS family based on names/ports
-        DeviceClassifier()  # Classify device type (PC, Mobile, etc.)
+        MdnsResolver(),  # Hostname resolution
+        PortScanner(),  # Open ports
+        OSDetector(),  # OS detection
+        DeviceClassifier()  # Device type classification
     ]
 
-    storage = RedisStorage()
+    # storage = RedisStorage()      # можно переключать
+    storage = JsonStorage(filename="devices.json")
 
-    return NetDaemon( discovery=discovery, storage=storage, enrichers=enrichers, mode=ScanMode.ACTIVE, pause_time=PAUSE_TIME
+    return NetDaemon(
+        discovery=discovery,
+        enrichers=enrichers,
+        storage=storage,
+        redis_client=None  # пока None, потом подключишь
     )
 
 
 if __name__ == "__main__":
     daemon = FactoryDaemon()
+
     try:
-        asyncio.run(daemon.run())
+        asyncio.run(daemon.start())  # ← было run(), теперь start()
     except KeyboardInterrupt:
         print("\n[!] SmartSniffer stopped by user")
+    except Exception as e:
+        print(f"[!] Critical error: {e}")

@@ -17,24 +17,27 @@ class DeviceClassifier(BaseEnricherModule):
         }
 
     async def enrich(self, device: DeviceInfo, mode: ScanMode) -> DeviceInfo:
-        device_type = "Workstation"  # Default type
+        device_type = "Workstation"
         max_score = 0
 
         name_lower = (device.hostname or "").lower()
 
-        for d_type, marks in self.types.items():
+        for d_type, data in self.types.items():
             score = 0
-            # Check ports
-            if device.open_ports.intersection(marks["ports"]):
-                score += 4
-            # Check keywords
-            if any(k in name_lower for k in marks["keywords"]):
+            # По портам
+            if hasattr(device, 'open_ports') and device.open_ports:
+                if set(device.open_ports).intersection(data["ports"]):
+                    score += 4
+            # По имени
+            if any(k in name_lower for k in data["keywords"]):
                 score += 6
 
             if score > max_score:
                 max_score = score
                 device_type = d_type
 
-        # Store in extra or a new field if we decide to add one to DeviceInfo
+        # Важно: сохраняем ТОЛЬКО в extra
         device.extra["device_type"] = device_type
+        # Ни в коем случае не делаем device.device_type = ...
+
         return device

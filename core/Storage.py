@@ -15,7 +15,6 @@ from core.interfaces import DeviceInfo
 class JsonStorage(BaseStorage):
     """
     High-efficiency JSON storage.
-    Handles Set and Datetime serialization automatically.
     """
 
     def __init__(self, filename: str = "devices.json"):
@@ -23,7 +22,6 @@ class JsonStorage(BaseStorage):
         self._data: Dict[str, dict] = self._load()
 
     def _load(self) -> Dict[str, dict]:
-        """Synchronous load on initialization."""
         if self.filename.exists():
             try:
                 with open(self.filename, 'r', encoding='utf-8') as f:
@@ -33,7 +31,6 @@ class JsonStorage(BaseStorage):
         return {}
 
     def _serialize(self, obj):
-        """Custom serializer for types JSON doesn't handle by default."""
         if isinstance(obj, datetime):
             return obj.isoformat()
         if isinstance(obj, set):
@@ -43,23 +40,23 @@ class JsonStorage(BaseStorage):
     async def add_or_update(self, device: DeviceInfo) -> bool:
         ip = device.ip
         is_new = ip not in self._data
-
-        # Convert dataclass to dict and update internal cache
         self._data[ip] = asdict(device)
-
-        # Async save to avoid blocking the daemon loop
         asyncio.create_task(self._save())
         return is_new
 
-    async def get_device(self, ip: str) -> Optional[DeviceInfo]:
+    async def get_by_ip(self, ip: str) -> Optional[DeviceInfo]:
+        """Новый метод"""
         data = self._data.get(ip)
         return self._dict_to_device(data) if data else None
 
     async def get_all_devices(self) -> List[DeviceInfo]:
         return [self._dict_to_device(d) for d in self._data.values()]
 
+    async def get_online_devices(self) -> List[DeviceInfo]:
+        """Новый метод"""
+        return [dev for dev in await self.get_all_devices() if getattr(dev, 'online', False)]
+
     async def _save(self):
-        """Writes current state to disk."""
         try:
             content = json.dumps(self._data, default=self._serialize, ensure_ascii=False, indent=2)
             with open(self.filename, 'w', encoding='utf-8') as f:
@@ -68,15 +65,10 @@ class JsonStorage(BaseStorage):
             print(f"JSON Save Error: {e}")
 
     def _dict_to_device(self, data: dict) -> DeviceInfo:
-        """Restores DeviceInfo from dictionary."""
-        # Convert ISO string back to datetime
         if isinstance(data.get("last_seen"), str):
             data["last_seen"] = datetime.fromisoformat(data["last_seen"])
-
-        # Convert port list back to set
         if "open_ports" in data:
             data["open_ports"] = set(data["open_ports"])
-
         return DeviceInfo(**data)
 
 

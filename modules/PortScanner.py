@@ -22,7 +22,7 @@ class PortScanner(BaseEnricherModule):
         """
         Scans device ports only in Legacy mode and only if not scanned before.
         """
-        if mode != ScanMode.LEGACY:
+        if mode != ScanMode.ACTIVE:
             return device
 
         # To follow the 'only once' principle, we check if open_ports is empty
