@@ -10,7 +10,6 @@ from modules.GetDevice import DeviceClassifier
 
 
 def FactoryDaemon():
-    """Фабрика создания демона — единственное место изменения зависимостей"""
 
     discovery = ArpScanner(
         target_network=TARGET_NETWORK,
@@ -31,7 +30,7 @@ def FactoryDaemon():
         discovery=discovery,
         enrichers=enrichers,
         storage=storage,
-        redis_client=None  # пока None, потом подключишь
+        redis_client=None  
     )
 
 
@@ -39,7 +38,7 @@ if __name__ == "__main__":
     daemon = FactoryDaemon()
 
     try:
-        asyncio.run(daemon.start())  # ← было run(), теперь start()
+        asyncio.run(daemon.start()) 
     except KeyboardInterrupt:
         print("\n[!] SmartSniffer stopped by user")
     except Exception as e:
